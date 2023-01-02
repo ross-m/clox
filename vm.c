@@ -34,6 +34,13 @@ Value pop()
 static InterpretResult run()
 {
 #define READ_BYTE() (*vm.ip++)
+#define BINARY_OP(op) \
+	do { \
+		double b = pop(); \
+		double a = pop(); \
+		push(a op b); \
+	} while (false)
+
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 
 	for(;;)
@@ -60,6 +67,11 @@ static InterpretResult run()
 				printf("\n");
 				break;
 			}
+			case OP_NEGATE: 	push(-pop()); break;
+			case OP_ADD: 		BINARY_OP(+); break;
+			case OP_SUBTRACT: 	BINARY_OP(-); break;
+			case OP_MULTIPLY: 	BINARY_OP(*); break;
+			case OP_DIVIDE:		BINARY_OP(/); break;	
 			case OP_RETURN: 
 			{
 				printValue(pop());
@@ -71,6 +83,7 @@ static InterpretResult run()
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef BINARY_OP
 }
 
 InterpretResult interpret(Chunk* chunk)
