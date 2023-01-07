@@ -13,11 +13,13 @@ typedef struct
 } Parser;
 
 Parser parser;
+Chunk* compilingChunk;
 
-static void error(const char* message)
+static Chunk* currentChunk()
 {
-	errorAt(&parser.previous, message);
+	return compilingChunk;
 }
+
 
 static void errorAt(Token* token, const char* message)
 {
@@ -39,6 +41,16 @@ static void errorAt(Token* token, const char* message)
 
 	fprintf(stderr, ": %s\n", message);
 	parser.hadError = true;
+}
+
+static void error(const char* message)
+{
+	errorAt(&parser.previous, message);
+}
+
+static void errorAtCurrent(const char* message)
+{
+	errorAt(&parser.current, message);
 }
 
 static void advance()
@@ -65,13 +77,37 @@ static void consume(TokenType type, const char* message)
 	errorAtCurrent(message);
 }
 
-void compile(const char* source, Chunk* chunk)
+static void emitByte(uint8_t byte)
+{
+	writeChunk(currentChunk(), byte, parser.previous.line);
+}
+
+static void emitBytes(uint8_t byte1, uint8_t byte2)
+{
+	emitByte(byte1);
+	emitByte(byte2);
+}
+
+static void emitReturn()
+{
+	emitByte(OP_RETURN);
+}
+
+static void endCompiler()
+{
+	emitReturn();
+}
+
+bool compile(const char* source, Chunk* chunk)
 {
 	initScanner(source);
+	compilingChunk = chunk;
+
 	parser.hadError = false;
 	parser.panicMode = false;
 	advance();
 	expression();
 	consume(TOKEN_EOF, "Expect end of expression.");
+	endCompiler();
 	return !parser.hadError;
 }

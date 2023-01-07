@@ -1,4 +1,4 @@
-#ifndef clox_cm_h
+#ifndef clox_vm_h
 #define clox_vm_h
 #include "value.h"
 #include "chunk.h"
