@@ -93,9 +93,25 @@ static void emitReturn()
 	emitByte(OP_RETURN);
 }
 
+static void emitConstant(Value value)
+{
+	emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
 static void endCompiler()
 {
 	emitReturn();
+}
+
+static void number()
+{
+	double value = strtod(parser.previous.start, NULL);
+	emitConstant(value);
+}
+
+static void expression()
+{
+
 }
 
 bool compile(const char* source, Chunk* chunk)
