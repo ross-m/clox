@@ -103,15 +103,29 @@ static void endCompiler()
 	emitReturn();
 }
 
+static void grouping()
+{
+	expression();
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+}
+
 static void number()
 {
 	double value = strtod(parser.previous.start, NULL);
 	emitConstant(value);
 }
 
-static void expression()
+static void unary()
 {
+	TokenType operatorType = parser.previous.type;
 
+	expression();
+
+	switch (operatorType) 
+	{
+		case TOKEN_MINUS: emitByte(OP_NEGATE); break;
+		default: return;
+	}
 }
 
 bool compile(const char* source, Chunk* chunk)
