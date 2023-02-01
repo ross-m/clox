@@ -43,26 +43,6 @@ Chunk* compilingChunk;
 
 static ParseRule* getRule(TokenType type);
 
-static void parsePrecedence(Precedence precendence)
-{
-	advance();
-	ParseFn prefixRule = getRule(parser.previous.type)->prefix;
-	if (prefixRule == NULL)
-	{
-		error("Expect expression.");
-		return;
-	}	
-
-	prefixRule();
-
-	while (precedence <= getRule(parser.current.type)->precedence)
-	{
-		advance();
-		ParseFn infixRule = getRule(parser.previous.type)->infix;
-		infixRule();
-	}
-}
-
 static Chunk* currentChunk()
 {
 	return compilingChunk;
@@ -123,6 +103,26 @@ static void consume(TokenType type, const char* message)
 	}
 
 	errorAtCurrent(message);
+}
+
+static void parsePrecedence(Precedence precedence)
+{
+	advance();
+	ParseFn prefixRule = getRule(parser.previous.type)->prefix;
+	if (prefixRule == NULL)
+	{
+		error("Expect expression.");
+		return;
+	}	
+
+	prefixRule();
+
+	while (precedence <= getRule(parser.current.type)->precedence)
+	{
+		advance();
+		ParseFn infixRule = getRule(parser.previous.type)->infix;
+		infixRule();
+	}
 }
 
 static void emitByte(uint8_t byte)
@@ -216,6 +216,8 @@ static void binary()
 			return;
 	}
 }
+
+
 
 ParseRule rules[] = {
 	[TOKEN_LEFT_PAREN]    = {grouping, NULL, PREC_NONE},
