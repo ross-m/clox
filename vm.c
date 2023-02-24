@@ -60,13 +60,6 @@ static bool isFalsey(Value value)
 static InterpretResult run()
 {
 #define READ_BYTE() (*vm.ip++)
-#define BINARY_OP(op) \
-	do { \
-		double b = pop(); \
-		double a = pop(); \
-		push(a op b); \
-	} while (false)
-
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 #define BINARY_OP(valueType, op) \
 	do { \
