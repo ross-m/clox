@@ -32,13 +32,28 @@ typedef enum
 
 typedef void (*ParseFn)(bool canAssign);
 
-typedef struct {
+typedef struct 
+{
 	ParseFn prefix;
 	ParseFn infix;
 	Precedence precedence;
 } ParseRule;
 
+typedef struct
+{
+	Token name;
+	int depth;
+} Local;
+
+typedef struct
+{
+	Local locals[UINT8_COUNT];
+	int localCount;
+	int scopeDepth;
+} Compiler;
+
 Parser parser;
+Compiler* current = NULL;
 Chunk* compilingChunk;
 
 static void emitByte(uint8_t byte);
@@ -48,7 +63,6 @@ static void expression();
 static void statement();
 static void declaration();
 static ParseRule* getRule(TokenType type);
-
 
 static Chunk* currentChunk()
 {
@@ -198,6 +212,13 @@ static void emitConstant(Value value)
 	emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
+static void initCompiler(Compiler* compiler)
+{
+	compiler->localCount = 0;
+	compiler->scopeDepth = 0;
+	current = compiler;
+}
+
 static void endCompiler()
 {
 	emitReturn();
@@ -209,9 +230,29 @@ static void endCompiler()
 #endif
 }
 
+static void beginScope()
+{
+	current->scopeDepth++;
+}
+
+static void endScope()
+{
+	current->scopeDepth--;
+}
+
 static void expression()
 {
 	parsePrecedence(PREC_ASSIGNMENT);
+}
+
+static void block()
+{
+	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF))
+	{
+		declaration();
+	}
+
+	consume(TOKEN_RIGHT_BRACE, "Expect, '}' after block.");
 }
 
 static void varDeclaration()
@@ -289,6 +330,12 @@ static void statement()
 	if (match(TOKEN_PRINT))
 	{
 		printStatement();
+	}
+	else if (match(TOKEN_LEFT_BRACE))
+	{
+		beginScope();
+		block();
+		endScope();
 	}
 	else 
 	{
@@ -437,6 +484,8 @@ static ParseRule* getRule(TokenType type)
 bool compile(const char* source, Chunk* chunk)
 {
 	initScanner(source);
+	Compiler compiler;
+	initCompiler(&compiler);
 	compilingChunk = chunk;
 
 	parser.hadError = false;
